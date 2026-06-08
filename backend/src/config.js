@@ -9,6 +9,7 @@ export const config = {
   WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
   WHATSAPP_VERIFY_TOKEN: process.env.WHATSAPP_VERIFY_TOKEN,
   WHATSAPP_APP_SECRET: process.env.WHATSAPP_APP_SECRET,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
   DAILY_THRESHOLD_DEFAULT: parseFloat(process.env.DAILY_THRESHOLD_DEFAULT || '10000'),
   PORT: parseInt(process.env.PORT || '3000', 10),
   TZ: process.env.TZ || 'Africa/Lagos',

@@ -23,4 +23,8 @@ export function validateTransaction(raw) {
 
 export const DIRECTION_VALUES = ['in', 'out'];
 export const BUCKET_VALUES = ['expense', 'income', 'saving', 'investment'];
-export const CHANNEL_VALUES = ['whatsapp_text', 'whatsapp_voice', 'alert', 'statement', 'manual'];
+export const CHANNEL_VALUES = [
+  'whatsapp_text', 'whatsapp_voice',
+  'telegram_text', 'telegram_voice',
+  'alert', 'statement', 'manual',
+];

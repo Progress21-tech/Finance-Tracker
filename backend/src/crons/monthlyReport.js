@@ -2,7 +2,8 @@ import cron from 'node-cron';
 import * as XLSX from 'xlsx';
 import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '../db/supabase.js';
-import { sendText, formatAmount } from '../services/whatsapp.js';
+import { formatAmount } from '../services/whatsapp.js';
+import { notifyUser } from '../engine/processMessage.js';
 import { config } from '../config.js';
 
 const anthropic = new Anthropic({ apiKey: config.ANTHROPIC_API_KEY });
@@ -25,11 +26,11 @@ export async function runMonthlyReports() {
 
   const { data: users } = await supabase
     .from('users')
-    .select('id, whatsapp_number, display_name, currency');
+    .select('id, whatsapp_number, telegram_chat_id, display_name, currency');
 
   for (const user of users ?? []) {
     await generateAndSendReport(user, from, to, monthLabel).catch(err =>
-      console.error(`[monthly report] Failed for ${user.whatsapp_number}:`, err.message)
+      console.error(`[monthly report] Failed for ${user.display_name ?? user.id}:`, err.message)
     );
   }
 }
@@ -44,7 +45,7 @@ async function generateAndSendReport(user, from, to, monthLabel) {
     .order('occurred_at', { ascending: true });
 
   if (!txs?.length) {
-    await sendText(user.whatsapp_number, `No transactions recorded for ${monthLabel}.`);
+    await notifyUser(user, `No transactions recorded for ${monthLabel}.`);
     return;
   }
 
@@ -84,7 +85,7 @@ async function generateAndSendReport(user, from, to, monthLabel) {
   const reportUrl = urlData?.publicUrl ?? '';
 
   const fmt = n => formatAmount(n, user.currency);
-  const whatsappMsg = `📊 *${monthLabel} Report*\n\n` +
+  const msg = `📊 *${monthLabel} Report*\n\n` +
     `${summary}\n\n` +
     `*Breakdown:*\n` +
     `💰 Earned: ${fmt(totals.income)}\n` +
@@ -94,8 +95,8 @@ async function generateAndSendReport(user, from, to, monthLabel) {
     (topCategories.length ? `*Top spending:* ${topCategories.map(([c, a]) => `${c} (${fmt(a)})`).join(', ')}\n\n` : '') +
     (reportUrl ? `📥 Download full report:\n${reportUrl}` : '');
 
-  await sendText(user.whatsapp_number, whatsappMsg);
-  console.log(`[monthly report] Sent to ${user.display_name ?? user.whatsapp_number}`);
+  await notifyUser(user, msg);
+  console.log(`[monthly report] Sent to ${user.display_name ?? user.id}`);
 }
 
 async function generateSummary(user, totals, topCategories, monthLabel) {

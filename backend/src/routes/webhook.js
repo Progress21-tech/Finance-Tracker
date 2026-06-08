@@ -2,10 +2,9 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { config } from '../config.js';
 import { supabase } from '../db/supabase.js';
-import { parseToRecord } from '../engine/parseRecord.js';
-import { preExtractAlert, enrichPromptWithAlert } from '../services/bankAlerts.js';
+import { parseAndStore, buildQuickSummary, confirmationMessage } from '../engine/processMessage.js';
 import { transcribeAudio } from '../services/groq.js';
-import { downloadMedia, sendText, confirmationMessage } from '../services/whatsapp.js';
+import { downloadMedia, sendText } from '../services/whatsapp.js';
 import { processStatement } from '../services/statementProcessor.js';
 
 const router = Router();
@@ -88,7 +87,6 @@ async function handleMessage(msg, change) {
 async function handleTextMessage(text, from, user) {
   const lower = text.toLowerCase().trim();
 
-  // Simple command routing
   if (lower === 'help') {
     await sendText(from, helpMessage());
     return;
@@ -104,42 +102,18 @@ async function handleTextMessage(text, from, user) {
     return;
   }
 
-  // Bank alert? Pre-extract then parse
-  const extracted = preExtractAlert(text);
-  const enriched = enrichPromptWithAlert(text, extracted);
-  const channel = extracted ? 'alert' : 'whatsapp_text';
+  const { record, error } = await parseAndStore(text, user.id, 'whatsapp_text');
 
-  let record;
-  try {
-    record = await parseToRecord(enriched, { now: new Date().toISOString() });
-  } catch {
-    await sendText(from, "Sorry, I couldn't parse that. Try: *spent 5k on fuel* or *got 50k salary*");
-    return;
-  }
-
-  if (record.needs_review && record.amount === 0) {
+  if (error === 'zero_amount') {
     await sendText(from, "I couldn't figure out the amount. Try: *spent 5k on fuel* or *got 50k salary*");
     return;
   }
-
-  const { error } = await supabase.from('transactions').insert({
-    user_id: user.id,
-    direction: record.direction,
-    bucket: record.bucket,
-    amount: record.amount,
-    currency: record.currency,
-    category: record.category,
-    source: record.source,
-    remark: record.remark,
-    channel,
-    occurred_at: record.occurred_at,
-    raw_input: text,
-    confidence: record.confidence,
-    needs_review: record.needs_review,
-  });
-
-  if (error) {
+  if (error === 'db_error') {
     await sendText(from, "There was an error saving the record. Please try again.");
+    return;
+  }
+  if (error) {
+    await sendText(from, "Sorry, I couldn't parse that. Try: *spent 5k on fuel* or *got 50k salary*");
     return;
   }
 
@@ -230,30 +204,6 @@ Send a PDF or CSV bank statement.
 Type *summary* for this month's overview.
 
 For more, visit your dashboard.`;
-}
-
-async function buildQuickSummary(user) {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-  const { data } = await supabase
-    .from('transactions')
-    .select('direction, bucket, amount, currency')
-    .eq('user_id', user.id)
-    .gte('occurred_at', monthStart);
-
-  if (!data?.length) return "No transactions recorded this month yet.";
-
-  const totals = { income: 0, expense: 0, saving: 0, investment: 0 };
-  for (const tx of data) totals[tx.bucket] = (totals[tx.bucket] ?? 0) + tx.amount;
-
-  const fmt = n => `₦${Number(n).toLocaleString('en-NG')}`;
-  return `*${now.toLocaleString('en-NG', { month: 'long' })} Summary* 📊\n\n` +
-    `💰 Earned: ${fmt(totals.income)}\n` +
-    `💸 Spent: ${fmt(totals.expense)}\n` +
-    `🏦 Saved: ${fmt(totals.saving)}\n` +
-    `📈 Invested: ${fmt(totals.investment)}\n\n` +
-    `Net: ${fmt(totals.income - totals.expense - totals.saving - totals.investment)}`;
 }
 
 export default router;

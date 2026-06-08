@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { supabase } from '../db/supabase.js';
-import { sendText, formatAmount } from '../services/whatsapp.js';
+import { formatAmount } from '../services/whatsapp.js';
+import { notifyUser } from '../engine/processMessage.js';
 
 // Track which users have already been warned today (resets each run day)
 const warnedToday = new Map(); // userId → boolean
@@ -27,7 +28,7 @@ async function checkThresholds() {
 
   const { data: users, error } = await supabase
     .from('users')
-    .select('id, whatsapp_number, display_name, daily_threshold, currency');
+    .select('id, whatsapp_number, telegram_chat_id, display_name, daily_threshold, currency');
 
   if (error) {
     console.error('[threshold cron] Failed to load users:', error.message);
@@ -55,13 +56,9 @@ async function checkThresholds() {
         `You've spent ${fmt(totalSpent)} today, which is ${fmt(over)} over your daily limit of ${fmt(user.daily_threshold)}.\n\n` +
         `Type *summary* to see today's breakdown.`;
 
-      try {
-        await sendText(user.whatsapp_number, msg);
-        warnedToday.set(user.id, true);
-        console.log(`[threshold cron] Warning sent to ${user.display_name ?? user.whatsapp_number}`);
-      } catch (err) {
-        console.error(`[threshold cron] Failed to send to ${user.whatsapp_number}:`, err.message);
-      }
+      await notifyUser(user, msg);
+      warnedToday.set(user.id, true);
+      console.log(`[threshold cron] Warning sent to ${user.display_name ?? user.id}`);
     }
   }
 }

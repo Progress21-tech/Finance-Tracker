@@ -4,6 +4,7 @@ import { config } from './config.js';
 import transactionsRouter from './routes/transactions.js';
 import statementsRouter from './routes/statements.js';
 import webhookRouter from './routes/webhook.js';
+import telegramRouter from './routes/telegram.js';
 import { startThresholdCron } from './crons/threshold.js';
 import { startMonthlyReportCron } from './crons/monthlyReport.js';
 
@@ -36,6 +37,7 @@ app.get('/health', (req, res) => res.json({ ok: true, ts: new Date().toISOString
 app.use('/transactions', transactionsRouter);
 app.use('/statements', statementsRouter);
 app.use('/webhook', webhookRouter);
+app.use('/telegram', telegramRouter);
 
 // Start background cron jobs
 startThresholdCron();

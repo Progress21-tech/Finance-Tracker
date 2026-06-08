@@ -81,3 +81,25 @@ create policy "statements: own rows" on public.statements
 -- insert into public.users (whatsapp_number, display_name, daily_threshold)
 -- values ('+2348012345678', 'Me', 10000)
 -- on conflict (whatsapp_number) do nothing;
+
+-- ============================================================
+-- Migration: Telegram channel support
+-- Run this block if you already deployed the initial schema.
+-- ============================================================
+
+-- Add telegram_chat_id to users (nullable; users may have WhatsApp only)
+alter table public.users
+  add column if not exists telegram_chat_id text unique;
+
+-- Widen the channel check constraint to include telegram values.
+-- Postgres requires dropping and re-adding the constraint.
+alter table public.transactions
+  drop constraint if exists transactions_channel_check;
+
+alter table public.transactions
+  add constraint transactions_channel_check
+  check (channel in (
+    'whatsapp_text', 'whatsapp_voice',
+    'telegram_text', 'telegram_voice',
+    'alert', 'statement', 'manual'
+  ));
