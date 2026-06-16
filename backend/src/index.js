@@ -10,15 +10,13 @@ import { startMonthlyReportCron } from './crons/monthlyReport.js';
 
 const app = express();
 
-// Capture raw body for Meta webhook signature verification
-app.use((req, res, next) => {
-  let data = '';
-  req.on('data', chunk => { data += chunk; });
-  req.on('end', () => {
-    req.rawBody = data;
-    next();
-  });
-});
+// Parse JSON for all routes, capturing raw body ONLY where needed
+// (Meta webhook signature verification needs the raw bytes)
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
