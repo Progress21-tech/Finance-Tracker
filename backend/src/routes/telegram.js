@@ -3,48 +3,52 @@ import { supabase } from '../db/supabase.js';
 import { parseAndStore, buildQuickSummary, confirmationMessage } from '../engine/processMessage.js';
 import { transcribeAudio } from '../services/groq.js';
 import { sendTelegramMessage, downloadTelegramFile } from '../services/telegram.js';
-
 const router = Router();
 
 // POST /telegram/webhook
 router.post('/webhook', async (req, res) => {
+  console.log('[TELEGRAM webhook] body:', JSON.stringify(req.body));
   // Always 200 immediately — Telegram will retry forever if it gets anything else
   res.sendStatus(200);
 
-  const { message } = req.body;
-  if (!message) return;
+  try {
+    const { message } = req.body;
+    if (!message) return;
 
-  const chatId = message.chat.id;
+    const chatId = message.chat.id;
 
-  // Determine message type
-  const isText = Boolean(message.text);
-  const isVoice = Boolean(message.voice);
-  if (!isText && !isVoice) return;
+    // Determine message type
+    const isText = Boolean(message.text);
+    const isVoice = Boolean(message.voice);
+    if (!isText && !isVoice) return;
 
-  // Route user by telegram_chat_id
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('telegram_chat_id', String(chatId))
-    .single();
+    // Route user by telegram_chat_id
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_chat_id', String(chatId))
+      .single();
 
-  if (!user) {
-    await sendTelegramMessage(chatId,
-      "Sorry, I don't recognise your Telegram account. Ask the admin to register you."
-    ).catch(() => {});
-    return;
-  }
+    if (!user) {
+      await sendTelegramMessage(chatId,
+        "Sorry, I don't recognise your Telegram account. Ask the admin to register you."
+      ).catch(() => {});
+      return;
+    }
 
-  if (isText) {
-    await handleText(message.text, chatId, user).catch(err =>
-      console.error('[telegram] handleText error:', err.message)
+    if (isText) {
+      await handleText(message.text, chatId, user).catch(err =>
+        console.error('[telegram] handleText error:', err.message)
+      );
+      return;
+    }
+
+    await handleVoice(message.voice.file_id, chatId, user).catch(err =>
+      console.error('[telegram] handleVoice error:', err.message)
     );
-    return;
+  } catch (error) {
+    console.error('TX ERROR:', error.message, error.stack);
   }
-
-  await handleVoice(message.voice.file_id, chatId, user).catch(err =>
-    console.error('[telegram] handleVoice error:', err.message)
-  );
 });
 
 async function handleText(text, chatId, user) {

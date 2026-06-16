@@ -41,41 +41,47 @@ router.get('/:id', async (req, res) => {
 
 // POST /transactions — manual entry (raw text or structured JSON)
 router.post('/', async (req, res) => {
-  const { user_id, raw_text, ...fields } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  console.log('[POST /transactions] body:', JSON.stringify(req.body));
+  try {
+    const { user_id, raw_text, ...fields } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id required' });
 
-  let record;
-  if (raw_text) {
-    record = await parseToRecord(raw_text);
-  } else {
-    const { direction, bucket, amount } = fields;
-    if (!direction || !bucket || amount == null) {
-      return res.status(400).json({ error: 'direction, bucket, and amount are required' });
+    let record;
+    if (raw_text) {
+      record = await parseToRecord(raw_text);
+    } else {
+      const { direction, bucket, amount } = fields;
+      if (!direction || !bucket || amount == null) {
+        return res.status(400).json({ error: 'direction, bucket, and amount are required' });
+      }
+      if (!DIRECTION_VALUES.includes(direction)) return res.status(400).json({ error: 'Invalid direction' });
+      if (!BUCKET_VALUES.includes(bucket)) return res.status(400).json({ error: 'Invalid bucket' });
+      record = { ...fields, confidence: 1, needs_review: false };
     }
-    if (!DIRECTION_VALUES.includes(direction)) return res.status(400).json({ error: 'Invalid direction' });
-    if (!BUCKET_VALUES.includes(bucket)) return res.status(400).json({ error: 'Invalid bucket' });
-    record = { ...fields, confidence: 1, needs_review: false };
+
+    const row = {
+      user_id,
+      direction: record.direction,
+      bucket: record.bucket,
+      amount: record.amount,
+      currency: record.currency ?? 'NGN',
+      category: record.category ?? '',
+      source: record.source ?? '',
+      remark: record.remark ?? '',
+      channel: 'manual',
+      occurred_at: record.occurred_at ?? new Date().toISOString(),
+      raw_input: raw_text ?? null,
+      confidence: record.confidence ?? 1,
+      needs_review: record.needs_review ?? false,
+    };
+
+    const { data, error } = await supabase.from('transactions').insert(row).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(201).json(data);
+  } catch (error) {
+    console.error('TX ERROR:', error.message, error.stack);
+    res.status(500).json({ error: error.message });
   }
-
-  const row = {
-    user_id,
-    direction: record.direction,
-    bucket: record.bucket,
-    amount: record.amount,
-    currency: record.currency ?? 'NGN',
-    category: record.category ?? '',
-    source: record.source ?? '',
-    remark: record.remark ?? '',
-    channel: 'manual',
-    occurred_at: record.occurred_at ?? new Date().toISOString(),
-    raw_input: raw_text ?? null,
-    confidence: record.confidence ?? 1,
-    needs_review: record.needs_review ?? false,
-  };
-
-  const { data, error } = await supabase.from('transactions').insert(row).select().single();
-  if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
 });
 
 // PATCH /transactions/:id — edit remark, category, bucket, amount, occurred_at
