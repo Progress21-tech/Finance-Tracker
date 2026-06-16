@@ -1,8 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { config } from '../config.js';
 import { validateTransaction } from './validator.js';
 
-const client = new Anthropic({ apiKey: config.ANTHROPIC_API_KEY });
+const groq = new Groq({ apiKey: config.GROQ_API_KEY });
+
+const MODEL = 'llama-3.3-70b-versatile';
 
 const SYSTEM_PROMPT = `You are a financial transaction parser for a Nigerian personal finance tracker.
 
@@ -44,6 +46,11 @@ Parsing rules:
 9. Dates: if a partial date like "12 May" is given, combine with the current year
 10. Be robust to typos, abbreviations, and casual Nigerian English`;
 
+function stripFences(text) {
+  // Llama sometimes wraps output in ```json ... ``` despite instructions
+  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+}
+
 function fallbackRecord(rawText, now) {
   return {
     direction: 'out',
@@ -64,26 +71,18 @@ export async function parseToRecord(rawText, context = {}) {
 
   let rawJson;
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
       max_tokens: 512,
-      system: [
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' },
-        },
-      ],
+      temperature: 0,
       messages: [
-        {
-          role: 'user',
-          content: `Current time: ${now}\n\n${rawText}`,
-        },
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: `Current time: ${now}\n\n${rawText}` },
       ],
     });
-    rawJson = message.content[0].text.trim();
+    rawJson = stripFences(completion.choices[0].message.content.trim());
   } catch (err) {
-    console.error('[parseToRecord] Claude API error:', err.message);
+    console.error('[parseToRecord] Groq API error:', err.message);
     return fallbackRecord(rawText, now);
   }
 
@@ -134,15 +133,18 @@ If a row is unclear, include it with needs_review:true and confidence below 0.5.
 
   let rawJson;
   try {
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await groq.chat.completions.create({
+      model: MODEL,
       max_tokens: 4096,
-      system: [{ type: 'text', text: STATEMENT_PROMPT, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: `Current time: ${now}\n\n${chunkText}` }],
+      temperature: 0,
+      messages: [
+        { role: 'system', content: STATEMENT_PROMPT },
+        { role: 'user', content: `Current time: ${now}\n\n${chunkText}` },
+      ],
     });
-    rawJson = message.content[0].text.trim();
+    rawJson = stripFences(completion.choices[0].message.content.trim());
   } catch (err) {
-    console.error('[parseStatementRows] Claude API error:', err.message);
+    console.error('[parseStatementRows] Groq API error:', err.message);
     return [];
   }
 
