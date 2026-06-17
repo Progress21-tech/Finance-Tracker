@@ -45,6 +45,55 @@ function isDuplicate(existing, candidate) {
   return sameAmount && sameDate && sameSource;
 }
 
+/**
+ * Preview-only: extract + parse + dedupe, return rows without inserting.
+ * Returns { rows, duplicateCount, totalParsed }.
+ */
+export async function processStatementSync(userId, buffer, mimeType) {
+  const text = await extractTextFromBuffer(buffer, mimeType);
+  const chunks = chunkText(text);
+  const allParsed = [];
+
+  for (const chunk of chunks) {
+    const records = await parseStatementRows(chunk);
+    allParsed.push(...records);
+  }
+
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+  const { data: existing } = await supabase
+    .from('transactions')
+    .select('amount, occurred_at, source')
+    .eq('user_id', userId)
+    .gte('occurred_at', threeMonthsAgo.toISOString());
+
+  const rows = [];
+  let duplicateCount = 0;
+
+  for (const candidate of allParsed) {
+    const isDup = (existing ?? []).some(ex => isDuplicate(ex, candidate));
+    if (isDup) {
+      duplicateCount++;
+    } else {
+      rows.push({
+        direction: candidate.direction,
+        bucket: candidate.bucket,
+        amount: candidate.amount,
+        currency: candidate.currency,
+        category: candidate.category,
+        source: candidate.source,
+        remark: candidate.remark,
+        occurred_at: candidate.occurred_at,
+        confidence: candidate.confidence,
+        needs_review: candidate.needs_review,
+      });
+    }
+  }
+
+  return { rows, duplicateCount, totalParsed: allParsed.length };
+}
+
 export async function processStatement(statementId, userId, buffer, mimeType) {
   await supabase
     .from('statements')

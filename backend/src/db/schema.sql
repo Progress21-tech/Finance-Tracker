@@ -83,6 +83,22 @@ create policy "statements: own rows" on public.statements
 -- on conflict (whatsapp_number) do nothing;
 
 -- ============================================================
+-- Migration: Web frontend support
+-- ============================================================
+
+-- whatsapp_number is optional for users who sign up via the web
+alter table public.users
+  alter column whatsapp_number drop not null;
+
+-- plan column for future tiering (no limits enforced in beta)
+alter table public.users
+  add column if not exists plan text not null default 'beta';
+
+-- preferences: stores onboarding answers as flexible JSON
+alter table public.users
+  add column if not exists preferences jsonb not null default '{}'::jsonb;
+
+-- ============================================================
 -- Migration: Telegram channel support
 -- Run this block if you already deployed the initial schema.
 -- ============================================================
