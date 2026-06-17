@@ -1,25 +1,179 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* ── Fonts ──────────────────────────────────────────────────────────────────── */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS custom properties (theme tokens) ───────────────────────────────────── */
+:root {
+  --bg:           #F8FAF9;
+  --surface:      #FFFFFF;
+  --card:         #F0FBF5;
+  --elevated:     #FFFFFF;
+  --border:       rgba(0, 0, 0, 0.07);
+  --border-strong:rgba(0, 0, 0, 0.14);
+  --text:         #0A0F0D;
+  --text-muted:   #4B5563;
+  --text-subtle:  #9CA3AF;
+  --accent:       #10B981;
+  --accent-bright:#A3E635;
+  --accent-deep:  #0B3D2E;
+  --income:       #10B981;
+  --expense:      #F87171;
+  --saving:       #14B8A6;
+  --investment:   #F59E0B;
+}
+
+.dark {
+  --bg:           #0A0F0D;
+  --surface:      #0F1A15;
+  --card:         #142019;
+  --elevated:     #1A2B20;
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-strong:rgba(255, 255, 255, 0.14);
+  --text:         #F8FAF9;
+  --text-muted:   #9CA3AF;
+  --text-subtle:  #6B7280;
+  --accent:       #10B981;
+  --accent-bright:#A3E635;
+  --accent-deep:  #0B3D2E;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────────── */
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   body {
-    @apply bg-slate-950 text-white antialiased;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Tabular numbers everywhere amounts appear */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Focus visible — green ring */
+  *:focus-visible {
+    outline: 2px solid #10B981;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: rgba(16, 185, 129, 0.2);
   }
 }
 
+/* ── Utility classes ─────────────────────────────────────────────────────────── */
 @layer utilities {
+  /* Text gradient */
   .text-gradient {
-    @apply bg-gradient-to-r from-brand-400 to-emerald-300 bg-clip-text text-transparent;
+    background: linear-gradient(135deg, #10B981 0%, #A3E635 60%, #34D399 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
+  .text-gradient-soft {
+    background: linear-gradient(135deg, #34D399 0%, #6EE7B7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glass surface */
+  .glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .glass-light {
+    background: rgba(20, 32, 25, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Animated mesh gradient background */
+  .mesh-bg {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 0% 0%,   rgba(11, 61, 46, 0.8)   0%, transparent 55%),
+      radial-gradient(ellipse at 100% 0%,  rgba(6, 78, 59, 0.6)   0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.3) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+
+  .dark .mesh-bg,
+  .mesh-bg {
+    background-color: #0A0F0D;
+    background-image:
+      radial-gradient(ellipse at 0% 0%,   rgba(11, 61, 46, 0.9)   0%, transparent 55%),
+      radial-gradient(ellipse at 100% 5%,  rgba(6, 78, 59, 0.7)   0%, transparent 50%),
+      radial-gradient(ellipse at 30% 100%, rgba(16, 185, 129, 0.25) 0%, transparent 40%);
+  }
+
+  .light .mesh-bg,
+  :not(.dark) .mesh-bg {
+    background-color: #F8FAF9;
+    background-image:
+      radial-gradient(ellipse at 0% 0%,   rgba(209, 250, 229, 0.9) 0%, transparent 55%),
+      radial-gradient(ellipse at 100% 0%,  rgba(167, 243, 208, 0.7) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(110, 231, 183, 0.4) 0%, transparent 40%);
+  }
+
+  /* Glow effects */
   .glow-green {
-    box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.2), 0 0 80px rgba(16, 185, 129, 0.08);
+  }
+
+  .glow-green-sm {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--card) 25%,
+      var(--elevated) 50%,
+      var(--card) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  /* Scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(16, 185, 129, 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.3); border-radius: 2px; }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
