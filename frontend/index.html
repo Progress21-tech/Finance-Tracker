@@ -4,8 +4,18 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Finance Tracker — AI-powered personal finance on WhatsApp. Record expenses, income, and investments by just texting or sending a voice note." />
-    <title>Finance Tracker — Your money, on WhatsApp</title>
+    <meta name="description" content="Quillio — Turn messy spending into clarity. AI-powered personal finance tracker via chat, WhatsApp, and Telegram." />
+    <meta name="theme-color" content="#10B981" />
+    <title>Quillio — Your money, written clearly</title>
+    <!-- Prevent flash of wrong theme -->
+    <script>
+      try {
+        const t = localStorage.getItem('quillio-theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (t === 'dark' || (!t && prefersDark)) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.add('light');
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
