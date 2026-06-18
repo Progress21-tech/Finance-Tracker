@@ -15,18 +15,36 @@ import { startMonthlyReportCron } from './crons/monthlyReport.js';
 
 const app = express();
 
-// CORS — allow configured frontend origin + local dev
-const allowedOrigins = [
+// CORS — allow configured frontend origin + Vercel previews + local dev
+const staticAllowed = [
   config.FRONTEND_ORIGIN,
   'http://localhost:5173',
   'http://localhost:3000',
-].filter(Boolean);
+  'http://localhost:4173', // vite preview
+].filter(Boolean).map(o => o.replace(/\/$/, '').toLowerCase());
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // server-to-server / curl / mobile
+  const normalized = origin.replace(/\/$/, '').toLowerCase();
+  if (staticAllowed.includes(normalized)) return true;
+  // any vercel.app subdomain (preview deploys)
+  if (/^https:\/\/[a-z0-9-]+(\.vercel\.app)$/i.test(normalized)) return true;
+  return false;
+}
+
+// Handle preflight before any other middleware (including auth)
+app.options('*', cors({
+  origin: (origin, cb) => cb(null, isAllowedOrigin(origin) ? origin || '*' : false),
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
 
 app.use(cors({
   origin: (origin, cb) => {
-    // allow server-to-server and mobile (no origin)
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS blocked: ${origin}`));
+    if (isAllowedOrigin(origin)) return cb(null, true);
+    // return a 403-shaped response rather than throwing (avoids 500)
+    cb(null, false);
   },
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
