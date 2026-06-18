@@ -4,24 +4,77 @@ import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 
 const router = Router();
 
-// POST /me/sync — called on first login; upserts a users row keyed on auth.uid
+// POST /me/sync — upserts a users row keyed on auth.uid.
+// Also links old bot-created rows (whatsapp_number matches auth phone) rather
+// than creating duplicates.
 router.post('/sync', requireAuthOnly, async (req, res) => {
   try {
-    const { id, email } = req.authUser;
+    const { id, email, phone } = req.authUser;
 
+    // 1. Row already linked to this auth.uid → return immediately
     const { data: existing } = await supabase
       .from('users')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();                     // no error when 0 rows
 
     if (existing) return res.json(existing);
 
+    // 2. Find an orphan row to adopt (old bot-created row identified by phone)
+    let orphan = null;
+    if (phone) {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('whatsapp_number', phone)
+        .maybeSingle();
+      orphan = data;
+    }
+
+    if (orphan) {
+      const oldId = orphan.id;
+
+      // Repoint child rows before rekeying the PK
+      await supabase.from('transactions').update({ user_id: id }).eq('user_id', oldId);
+      await supabase.from('statements').update({ user_id: id }).eq('user_id', oldId);
+
+      // Try to update the PK in-place (works when FK has ON UPDATE CASCADE)
+      const { data: linked, error: linkErr } = await supabase
+        .from('users')
+        .update({ id })
+        .eq('id', oldId)
+        .select()
+        .single();
+
+      if (!linkErr && linked) {
+        console.log(`[/me/sync] Linked old row ${oldId} → auth.uid ${id}`);
+        return res.json(linked);
+      }
+
+      // Fallback: delete old row and reinsert with auth.uid (preserves profile data)
+      const { error: delErr } = await supabase.from('users').delete().eq('id', oldId);
+      if (!delErr) {
+        const { display_name, whatsapp_number, telegram_chat_id,
+                daily_threshold, currency, plan, preferences } = orphan;
+        const { data: migrated, error: migrateErr } = await supabase
+          .from('users')
+          .insert({ id, display_name, whatsapp_number, telegram_chat_id,
+                    daily_threshold, currency, plan, preferences })
+          .select()
+          .single();
+        if (!migrateErr) {
+          console.log(`[/me/sync] Migrated old row ${oldId} → auth.uid ${id}`);
+          return res.json(migrated);
+        }
+        console.error('[/me/sync] migrate insert failed:', migrateErr.message);
+      }
+    }
+
+    // 3. Create a fresh user row
     const { data: created, error } = await supabase
       .from('users')
       .insert({
         id,
-        whatsapp_number: null,
         display_name: email?.split('@')[0] ?? null,
         daily_threshold: 10000,
         currency: 'NGN',
@@ -31,7 +84,10 @@ router.post('/sync', requireAuthOnly, async (req, res) => {
       .select()
       .single();
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      console.error('[POST /me/sync] insert error:', error);
+      return res.status(500).json({ error: error.message });
+    }
     res.status(201).json(created);
   } catch (err) {
     console.error('[POST /me/sync]', err.message);
