@@ -60,7 +60,7 @@ export function Logo({ size = 'md', showBeta = false, className = '', markOnly =
 
       {!markOnly && (
         <span className={`font-display tracking-tight text-[var(--text)] ${textSizes[size]}`}>
-          Quillio.
+          Quillio
         </span>
       )}
 
