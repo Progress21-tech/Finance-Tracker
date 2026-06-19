@@ -243,6 +243,16 @@ export default function Chat() {
   useEffect(() => { autoResize(); }, [input, autoResize]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Restore message typed in the landing page chat before signup/login
+  useEffect(() => {
+    const pending = sessionStorage.getItem('quillio_pending_chat');
+    if (pending) {
+      setInput(pending);
+      sessionStorage.removeItem('quillio_pending_chat');
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, []);
+
   function addMsg(msg: Message) { setMessages(prev => [...prev, msg]); }
 
   // ── File attach ──────────────────────────────────────────────────────────────

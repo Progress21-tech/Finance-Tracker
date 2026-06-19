@@ -83,6 +83,14 @@
     background-clip: text;
   }
 
+  /* Landing hero gradient — emerald → teal, higher contrast on dark */
+  .text-gradient-hero {
+    background: linear-gradient(135deg, #10B981 0%, #14B8A6 55%, #6EE7B7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   .text-gradient-soft {
     background: linear-gradient(135deg, #34D399 0%, #6EE7B7 100%);
     -webkit-background-clip: text;
