@@ -7,7 +7,6 @@ import {
   MessageSquare, ShieldCheck, Zap, ChevronRight,
 } from 'lucide-react';
 import { Logo } from '../components/ui/Logo';
-import { ThemeToggle } from '../components/ui/ThemeToggle';
 
 // ── Animation helpers ──────────────────────────────────────────────────────────
 const wordReveal = {
@@ -183,7 +182,6 @@ function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <ThemeToggle size="sm" />
         <Link
           to="/login"
           className="hidden md:block text-sm text-[var(--text-muted)] hover:text-[var(--text)] transition-colors px-3 py-1.5"
@@ -255,7 +253,7 @@ function ChatMockup({ onInteract }: { onInteract: () => void }) {
             onClick={onInteract}
             whileHover={{ scale: 1.04, y: -1 }}
             whileTap={{ scale: 0.96 }}
-            className="text-xs px-3 py-1.5 rounded-full glass border border-[var(--border)] text-[var(--text-muted)] hover:dark:text-quillio-400 hover:text-quillio-600 hover:border-quillio-500/30 transition-colors duration-150"
+            className="text-xs px-3 py-2 min-h-[36px] rounded-full glass border border-[var(--border)] text-[var(--text-muted)] hover:dark:text-quillio-400 hover:text-quillio-600 hover:border-quillio-500/30 transition-colors duration-150"
           >
             {pill}
           </motion.button>
@@ -775,7 +773,7 @@ const STEPS = [
     title: 'Talk to it — or upload',
     body: 'Send a message ("spent ₦4,200 on groceries"), forward a bank alert, voice-note a purchase, or drop in a statement PDF. Any format.',
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-48 flex items-center justify-center relative overflow-hidden">
+      <div className="rounded-2xl p-6 min-h-[160px] md:h-48 flex items-center justify-center relative overflow-hidden" style={{ background: '#0A1810' }}>
         <div className="space-y-2 w-full max-w-[200px]">
           {[
             { text: 'spent 3k on lunch', delay: 0 },
@@ -802,7 +800,7 @@ const STEPS = [
     title: 'It organises automatically',
     body: "Quillio reads your input, classifies it (expense / income / savings / investment), picks the category, and stores a clean record in seconds.",
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-48 flex items-center justify-center relative overflow-hidden">
+      <div className="rounded-2xl p-6 min-h-[160px] md:h-48 flex items-center justify-center relative overflow-hidden" style={{ background: '#0A1810' }}>
         {/* Animated parsing cards */}
         <div className="w-full max-w-[220px] space-y-2">
           {[
@@ -835,7 +833,7 @@ const STEPS = [
     title: 'Get analytics & reports',
     body: 'See where your money goes, get AI-written budgeting suggestions, and export a full report — monthly or any custom period you choose.',
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-48 flex items-end justify-center relative overflow-hidden">
+      <div className="rounded-2xl p-6 min-h-[160px] md:h-48 flex items-end justify-center relative overflow-hidden" style={{ background: '#0A1810' }}>
         <div className="flex items-end gap-1.5 h-28 w-full max-w-[200px]">
           {[55, 80, 42, 95, 60, 78, 38].map((h, i) => (
             <motion.div
@@ -855,7 +853,7 @@ const STEPS = [
 
 function HowItWorksSection() {
   return (
-    <section id="how" className="py-24 px-6 bg-[var(--surface)]">
+    <section id="how" className="py-16 md:py-24 px-6 bg-[var(--surface)]">
       <div className="max-w-5xl mx-auto">
         <FadeIn className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest dark:text-quillio-500 text-quillio-600 mb-3">How it works</p>
@@ -864,10 +862,10 @@ function HowItWorksSection() {
           </h2>
         </FadeIn>
 
-        <div className="space-y-16">
+        <div className="space-y-12 md:space-y-16">
           {STEPS.map((step, i) => (
             <FadeIn key={step.num} delay={0.05}>
-              <div className={`grid md:grid-cols-2 gap-10 items-center ${i % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
+              <div className={`grid md:grid-cols-2 gap-6 md:gap-10 items-center ${i % 2 === 1 ? 'md:grid-flow-col-dense' : ''}`}>
                 <div className={i % 2 === 1 ? 'md:col-start-2' : ''}>
                   <div className="flex items-center gap-3 mb-4">
                     <span className="font-mono text-xs font-bold text-[var(--text-subtle)]">{step.num}</span>
@@ -903,7 +901,7 @@ const FEATURES = [
     icon: <Upload size={16} />,
     bullets: ['Natural language chat', 'Voice note transcription', 'Statement PDF / CSV upload', 'Bank alert forwarding (WhatsApp & Telegram)'],
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-56 flex items-center justify-center relative overflow-hidden">
+      <div className="rounded-2xl p-6 min-h-[180px] md:h-56 flex items-center justify-center relative overflow-hidden" style={{ background: '#0A1810' }}>
         {/* Channel icons */}
         <div className="grid grid-cols-2 gap-3 w-full max-w-[200px]">
           {[
@@ -935,7 +933,7 @@ const FEATURES = [
     icon: <Sparkles size={16} />,
     bullets: ['Monthly spending summary', 'Category trends & overspend alerts', 'Savings rate tracking', 'Plain-English AI suggestions'],
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-56 flex flex-col justify-end relative overflow-hidden gap-3">
+      <div className="rounded-2xl p-6 min-h-[180px] md:h-56 flex flex-col justify-end relative overflow-hidden gap-3" style={{ background: '#0A1810' }}>
         {/* Bars */}
         <div className="flex items-end gap-1.5 h-24 w-full">
           {[60, 85, 45, 90, 55, 75, 40].map((h, i) => (
@@ -969,7 +967,7 @@ const FEATURES = [
     icon: <FileSpreadsheet size={16} />,
     bullets: ['XLSX spreadsheet export', 'PDF financial report', 'Custom date ranges', 'Monthly auto-report (coming soon)'],
     visual: (
-      <div className="mesh-bg rounded-2xl p-6 h-56 flex items-center justify-center relative overflow-hidden">
+      <div className="rounded-2xl p-6 min-h-[180px] md:h-56 flex items-center justify-center relative overflow-hidden" style={{ background: '#0A1810' }}>
         <div className="w-full max-w-[190px] space-y-3">
           {[
             { name: 'May-2025.xlsx', type: 'XLSX', color: '#10B981' },
@@ -999,8 +997,8 @@ const FEATURES = [
 
 function FeatureShowcaseSection() {
   return (
-    <section id="features" className="py-24 px-6 bg-[var(--bg)]">
-      <div className="max-w-5xl mx-auto space-y-24">
+    <section id="features" className="py-16 md:py-24 px-6 bg-[var(--bg)]">
+      <div className="max-w-5xl mx-auto space-y-16 md:space-y-24">
         <FadeIn className="text-center">
           <p className="text-xs font-semibold uppercase tracking-widest dark:text-quillio-500 text-quillio-600 mb-3">Features</p>
           <h2 className="font-display font-bold text-3xl md:text-4xl text-[var(--text)]">
@@ -1064,7 +1062,7 @@ const TESTIMONIALS = [
 
 function SocialProofSection() {
   return (
-    <section className="py-24 px-6 bg-[var(--surface)]">
+    <section className="py-16 md:py-24 px-6 bg-[var(--surface)]">
       <div className="max-w-5xl mx-auto">
         <FadeIn className="text-center mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest dark:text-quillio-500 text-quillio-600 mb-3">Early users</p>
@@ -1106,33 +1104,29 @@ function SocialProofSection() {
 // ── Final CTA ─────────────────────────────────────────────────────────────────
 function FinalCTASection({ onSignup }: { onSignup: () => void }) {
   return (
-    <section id="pricing" className="py-28 px-6 mesh-bg relative overflow-hidden">
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, rgba(11,61,46,0.6))' }}
-      />
+    <section id="pricing" className="py-16 md:py-28 px-6 relative overflow-hidden" style={{ background: '#16A34A' }}>
       <div className="relative z-10 max-w-2xl mx-auto text-center">
         <FadeIn>
-          <p className="text-xs font-semibold uppercase tracking-widest text-quillio-400 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-4">
             Free during beta
           </p>
           <h2 className="font-display font-black text-4xl md:text-5xl text-white mb-6 leading-tight">
             Start organising your<br />money today.
           </h2>
-          <p className="text-lg mb-10 leading-relaxed text-white/55">
+          <p className="text-lg mb-10 leading-relaxed text-white/90">
             No credit card. No pricing tiers. Just Quillio — your AI-powered financial record keeper.
           </p>
           <motion.button
             onClick={onSignup}
-            whileHover={{ scale: 1.04, boxShadow: '0 0 60px rgba(16,185,129,0.45)' }}
+            whileHover={{ scale: 1.04, boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-quillio-500 hover:bg-quillio-400 text-white font-semibold text-lg transition-colors duration-150"
-            style={{ boxShadow: '0 0 32px rgba(16,185,129,0.3)' }}
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-white text-quillio-700 hover:bg-quillio-50 font-semibold text-lg transition-colors duration-150"
+            style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
           >
             Get started free
             <ArrowRight size={20} />
           </motion.button>
-          <p className="mt-4 text-xs text-white/28">Takes 30 seconds to set up.</p>
+          <p className="mt-4 text-xs text-white/70">Takes 30 seconds to set up.</p>
         </FadeIn>
       </div>
     </section>
@@ -1150,10 +1144,7 @@ function Footer() {
           <Link to="/signup" className="hover:text-[var(--text-muted)] transition-colors">Sign up</Link>
           <a href="mailto:hello@quillio.co" className="hover:text-[var(--text-muted)] transition-colors">Contact</a>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-[var(--text-subtle)]">© {new Date().getFullYear()} Quillio</span>
-          <ThemeToggle size="sm" />
-        </div>
+        <span className="text-xs text-[var(--text-subtle)]">© {new Date().getFullYear()} Quillio</span>
       </div>
     </footer>
   );
