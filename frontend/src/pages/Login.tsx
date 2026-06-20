@@ -5,6 +5,7 @@ import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Logo } from '../components/ui/Logo';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,7 +22,8 @@ export default function Login() {
     try {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       if (err) throw err;
-      navigate('/app');
+      const syncedUser = await api.me.sync();
+      navigate(syncedUser.preferences?.onboarding_complete ? '/app' : '/onboarding');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
     } finally {
@@ -33,7 +35,7 @@ export default function Login() {
     setError(null);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/app` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (err) setError(err.message);
   }

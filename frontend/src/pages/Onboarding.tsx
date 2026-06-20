@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, SkipForward } from 'lucide-react';
@@ -61,7 +61,14 @@ const slideVariants = {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
+
+  // Guard: already completed onboarding → skip to dashboard
+  useEffect(() => {
+    if (!loading && user?.preferences?.onboarding_complete) {
+      navigate('/app', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   const [step, setStep]   = useState(1);
   const [dir, setDir]     = useState(1);

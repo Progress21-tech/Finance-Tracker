@@ -11,6 +11,7 @@ import Landing      from './pages/Landing';
 import Login        from './pages/Login';
 import Signup       from './pages/Signup';
 import Onboarding   from './pages/Onboarding';
+import AuthCallback from './pages/AuthCallback';
 import AppLayout    from './pages/app/Layout';
 import Chat         from './pages/app/Chat';
 import Dashboard    from './pages/app/Dashboard';
@@ -29,9 +30,10 @@ export default function App() {
             <Routes>
               <Route path="/"           element={<Landing />} />
               <Route path="/token-demo" element={<TokenDemo />} />
-              <Route path="/login"      element={<Login />} />
-              <Route path="/signup"     element={<Signup />} />
-              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/login"         element={<Login />} />
+              <Route path="/signup"        element={<Signup />} />
+              <Route path="/onboarding"    element={<Onboarding />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
 
               {/* Protected app shell */}
               <Route

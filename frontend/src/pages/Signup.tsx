@@ -5,6 +5,7 @@ import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Logo } from '../components/ui/Logo';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -27,8 +28,13 @@ export default function Signup() {
         options: { data: { display_name: name } },
       });
       if (err) throw err;
-      // Auth state change triggers syncBackendUser in AuthProvider → then route to onboarding
-      navigate('/onboarding');
+      try {
+        const syncedUser = await api.me.sync();
+        navigate(syncedUser.preferences?.onboarding_complete ? '/app' : '/onboarding');
+      } catch {
+        // No session yet (email confirmation pending) — default new users to onboarding
+        navigate('/onboarding');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not create account. Try again.');
     } finally {
@@ -40,7 +46,7 @@ export default function Signup() {
     setError(null);
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (err) setError(err.message);
   }
