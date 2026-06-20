@@ -1104,8 +1104,14 @@ function SocialProofSection() {
 // ── Final CTA ─────────────────────────────────────────────────────────────────
 function FinalCTASection({ onSignup }: { onSignup: () => void }) {
   return (
-    <section id="pricing" className="py-16 md:py-28 px-6 relative overflow-hidden" style={{ background: '#16A34A' }}>
-      <div className="relative z-10 max-w-2xl mx-auto text-center">
+    <section id="pricing" className="bg-[var(--bg)] py-12 md:py-20 px-4 md:px-10">
+      <div
+        className="max-w-5xl mx-auto rounded-3xl px-8 md:px-16 py-14 md:py-20 text-center relative overflow-hidden"
+        style={{
+          background: '#16A34A',
+          boxShadow: '0 8px 48px rgba(22,163,74,0.28), 0 2px 12px rgba(0,0,0,0.10)',
+        }}
+      >
         <FadeIn>
           <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-4">
             Free during beta
