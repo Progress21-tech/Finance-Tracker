@@ -10,6 +10,7 @@ import meRouter          from './routes/me.js';
 import dashboardRouter   from './routes/dashboard.js';
 import analyticsRouter   from './routes/analytics.js';
 import reportsRouter     from './routes/reports.js';
+import chatRouter        from './routes/chat.js';
 import { startThresholdCron }    from './crons/threshold.js';
 import { startMonthlyReportCron } from './crons/monthlyReport.js';
 
@@ -70,6 +71,7 @@ app.use('/statements',   statementsRouter);
 app.use('/dashboard',    dashboardRouter);
 app.use('/analytics',    analyticsRouter);
 app.use('/reports',      reportsRouter);
+app.use('/chat',         chatRouter);
 
 // Start background cron jobs
 startThresholdCron();

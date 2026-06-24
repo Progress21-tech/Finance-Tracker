@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { supabase } from '../db/supabase.js';
-import { parseAndStore, buildQuickSummary, confirmationMessage } from '../engine/processMessage.js';
+import { confirmationMessage } from '../engine/processMessage.js';
+import { handleChatMessage } from '../engine/chat.js';
 import { transcribeAudio } from '../services/groq.js';
 import { sendTelegramMessage, downloadTelegramFile } from '../services/telegram.js';
 const router = Router();
@@ -51,35 +52,27 @@ router.post('/webhook', async (req, res) => {
   }
 });
 
-async function handleText(text, chatId, user) {
+async function handleText(text, chatId, user, channel = 'telegram_text') {
   const lower = text.toLowerCase().trim();
 
-  if (lower === 'help' || lower === '/help') {
-    await sendTelegramMessage(chatId, helpMessage());
+  if (lower.startsWith('edit ') || lower === 'edit') {
+    await sendTelegramMessage(chatId, "To edit a transaction, use the dashboard or send the corrected version and I'll re-parse it.");
     return;
   }
 
-  if (lower === 'summary' || lower === '/summary' || lower === 'report' || lower === '/report') {
-    await sendTelegramMessage(chatId, await buildQuickSummary(user));
+  const response = await handleChatMessage({
+    user,
+    message: text,
+    channel,
+    sessionId: String(chatId),
+  });
+
+  if (response.intent === 'record_transaction' && response.transaction) {
+    await sendTelegramMessage(chatId, confirmationMessage(response.transaction));
     return;
   }
 
-  const { record, error } = await parseAndStore(text, user.id, 'telegram_text');
-
-  if (error === 'zero_amount') {
-    await sendTelegramMessage(chatId, "I couldn't figure out the amount. Try: *spent 5k on fuel* or *got 50k salary*");
-    return;
-  }
-  if (error === 'db_error') {
-    await sendTelegramMessage(chatId, "There was an error saving the record. Please try again.");
-    return;
-  }
-  if (error) {
-    await sendTelegramMessage(chatId, "Sorry, I couldn't parse that. Try: *spent 5k on fuel* or *got 50k salary*");
-    return;
-  }
-
-  await sendTelegramMessage(chatId, confirmationMessage(record));
+  await sendTelegramMessage(chatId, response.message);
 }
 
 async function handleVoice(fileId, chatId, user) {
@@ -101,7 +94,7 @@ async function handleVoice(fileId, chatId, user) {
   }
 
   await sendTelegramMessage(chatId, `📝 Heard: "${text}"\nParsing...`);
-  await handleText(text, chatId, user);
+  await handleText(text, chatId, user, 'telegram_voice');
 }
 
 function helpMessage() {

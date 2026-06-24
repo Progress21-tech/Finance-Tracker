@@ -31,7 +31,7 @@ export async function parseAndStore(rawText, userId, channel) {
     return { record, stored: false, error: 'zero_amount' };
   }
 
-  const { error: dbError } = await supabase.from('transactions').insert({
+  const { data: transaction, error: dbError } = await supabase.from('transactions').insert({
     user_id: userId,
     direction: record.direction,
     bucket: record.bucket,
@@ -45,14 +45,14 @@ export async function parseAndStore(rawText, userId, channel) {
     raw_input: rawText,
     confidence: record.confidence,
     needs_review: record.needs_review,
-  });
+  }).select().single();
 
   if (dbError) {
     console.error('[processMessage] DB insert error:', dbError.message);
     return { record, stored: false, error: 'db_error' };
   }
 
-  return { record, stored: true, error: null };
+  return { record, transaction, stored: true, error: null };
 }
 
 export async function buildQuickSummary(user) {

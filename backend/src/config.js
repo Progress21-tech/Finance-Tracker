@@ -16,7 +16,7 @@ export const config = {
   TZ: process.env.TZ || 'Africa/Lagos',
 };
 
-const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'ANTHROPIC_API_KEY'];
+const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'GROQ_API_KEY'];
 for (const key of required) {
   if (!config[key]) console.warn(`⚠️  Missing env var: ${key}`);
 }

@@ -2,7 +2,8 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import { config } from '../config.js';
 import { supabase } from '../db/supabase.js';
-import { parseAndStore, buildQuickSummary, confirmationMessage } from '../engine/processMessage.js';
+import { confirmationMessage } from '../engine/processMessage.js';
+import { handleChatMessage } from '../engine/chat.js';
 import { transcribeAudio } from '../services/groq.js';
 import { downloadMedia, sendText } from '../services/whatsapp.js';
 import { processStatement } from '../services/statementProcessor.js';
@@ -84,40 +85,27 @@ async function handleMessage(msg, change) {
   await sendText(from, "I can handle text messages, voice notes, and document uploads. Try sending a text like: *spent 5k on fuel*");
 }
 
-async function handleTextMessage(text, from, user) {
+async function handleTextMessage(text, from, user, channel = 'whatsapp_text') {
   const lower = text.toLowerCase().trim();
-
-  if (lower === 'help') {
-    await sendText(from, helpMessage());
-    return;
-  }
 
   if (lower.startsWith('edit ') || lower === 'edit') {
     await sendText(from, "To edit a transaction, use the API or reply with the corrected version and we'll re-parse it.");
     return;
   }
 
-  if (lower === 'summary' || lower === 'report') {
-    await sendText(from, await buildQuickSummary(user));
+  const response = await handleChatMessage({
+    user,
+    message: text,
+    channel,
+    sessionId: from,
+  });
+
+  if (response.intent === 'record_transaction' && response.transaction) {
+    await sendText(from, confirmationMessage(response.transaction));
     return;
   }
 
-  const { record, error } = await parseAndStore(text, user.id, 'whatsapp_text');
-
-  if (error === 'zero_amount') {
-    await sendText(from, "I couldn't figure out the amount. Try: *spent 5k on fuel* or *got 50k salary*");
-    return;
-  }
-  if (error === 'db_error') {
-    await sendText(from, "There was an error saving the record. Please try again.");
-    return;
-  }
-  if (error) {
-    await sendText(from, "Sorry, I couldn't parse that. Try: *spent 5k on fuel* or *got 50k salary*");
-    return;
-  }
-
-  await sendText(from, confirmationMessage(record));
+  await sendText(from, response.message);
 }
 
 async function handleVoiceMessage(mediaId, mimeType, from, user) {
@@ -139,7 +127,7 @@ async function handleVoiceMessage(mediaId, mimeType, from, user) {
   }
 
   await sendText(from, `📝 Heard: _"${text}"_\nParsing...`);
-  await handleTextMessage(text, from, { ...user, _voiceTranscript: text });
+  await handleTextMessage(text, from, { ...user, _voiceTranscript: text }, 'whatsapp_voice');
 }
 
 async function handleDocumentMessage(doc, type, from, user) {
